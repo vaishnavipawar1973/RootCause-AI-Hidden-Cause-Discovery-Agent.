@@ -1,15 +1,34 @@
 @echo off
-title RootCause AI
+title RootCause AI Launcher
 cd /d "%~dp0"
 echo ==========================================
-echo       RootCause AI - Project Launcher
+echo          RootCause AI Launcher
 echo ==========================================
+echo.
 where py >nul 2>nul
 if %errorlevel%==0 (
-  py -m pip install -r requirements.txt
-  py -m streamlit run app.py
+    set "PYTHON=py"
 ) else (
-  python -m pip install -r requirements.txt
-  python -m streamlit run app.py
+    set "PYTHON=python"
 )
+echo Checking Python...
+%PYTHON% --version
+if errorlevel 1 (
+    echo.
+    echo Python was not found. Install Python 3.9+ and tick "Add Python to PATH".
+    pause
+    exit /b 1
+)
+echo.
+echo Installing/checking required package...
+%PYTHON% -m pip install -r requirements.txt
+if errorlevel 1 (
+    echo.
+    echo Package installation failed. Check your internet connection and try again.
+    pause
+    exit /b 1
+)
+echo.
+echo Starting RootCause AI in your browser...
+%PYTHON% -m streamlit run app.py
 pause
