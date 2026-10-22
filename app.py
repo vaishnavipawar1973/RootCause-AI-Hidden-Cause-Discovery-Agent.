@@ -150,8 +150,13 @@ st.markdown("""
 .small-muted { color: #a8b7cc; font-size: .9rem; }
 .pill { display: inline-block; background: #203a5b; color: #b9d7ff; border-radius: 999px; padding: .3rem .65rem; font-size: .76rem; font-weight: 800; letter-spacing: .04em; }
 div.stButton > button[kind="primary"] { border: 0; border-radius: 12px; min-height: 3rem; font-weight: 750; }
-div[data-testid="stMetric"] { background: #111c2e; border: 1px solid #2b3b52; border-radius: 15px; padding: 1rem; }
+div[data-testid="stMetric"] { background: #111c2e; border: 1px solid #2b3b52; border-radius: 15px; padding: 1rem; transition: transform .18s ease, border-color .18s ease; }
+div[data-testid="stMetric"]:hover { transform: translateY(-2px); border-color: #70a7ff; }
 div[data-testid="stProgressBar"] > div { border-radius: 999px; }
+div[data-testid="stCheckbox"] { padding: .35rem .5rem; border-radius: 10px; transition: background .18s ease; }
+div[data-testid="stCheckbox"]:hover { background: rgba(83,130,190,.12); }
+div.stButton > button { transition: transform .15s ease, border-color .15s ease; }
+div.stButton > button:hover { transform: translateY(-1px); border-color: #80b5ff; }
 hr { border-color: #28384e; }
 </style>
 """, unsafe_allow_html=True)
@@ -173,7 +178,9 @@ with st.sidebar:
     st.divider()
     st.markdown("**Runs offline**")
     st.caption("No API key or account required.")
-    if st.button("↺ Start over", use_container_width=True):
+    if st.button("↺ Reset this diagnosis", use_container_width=True):
+        for idx in range(len(SCENARIOS[scenario]["tests"])):
+            st.session_state.pop(f"clue_{scenario}_{idx}", None)
         st.session_state.selected_clues = []
         st.session_state.analysis_done = False
         st.session_state.last_scenario = scenario
@@ -210,28 +217,58 @@ with st.expander("👀 What are the common symptoms?", expanded=False):
     for symptom in data["symptoms"]:
         st.markdown(f"- {symptom}")
 
+st.markdown("### Your journey")
+journey = st.columns(3)
+for col, number, label in zip(journey, ["01", "02", "03"], ["Choose a problem", "Select evidence", "Explore the report"]):
+    with col:
+        st.markdown(f'<div class="section-card"><span class="pill">STEP {number}</span><p style="margin:.65rem 0 0 0;font-weight:700">{label}</p></div>', unsafe_allow_html=True)
+
 st.divider()
 st.markdown("## 1 · Tell the agent what you observed")
 st.write("Select every clue that matches what you have already checked. If you are unsure, leave them unchecked.")
 
 options = list(data["tests"].keys())
+
+quick_col, clear_col, note_col = st.columns([1.2, 1, 2])
+with quick_col:
+    if st.button("✨ Try a sample diagnosis", use_container_width=True):
+        # Pick one meaningful clue for a guided first-time demo.
+        sample_clue = next((x for x in options if x != "I have not checked yet"), options[0])
+        for idx, clue in enumerate(options):
+            st.session_state[f"clue_{scenario}_{idx}"] = (clue == sample_clue)
+        st.session_state.selected_clues = [sample_clue]
+        st.session_state.analysis_done = True
+        st.rerun()
+with clear_col:
+    if st.button("Clear clues", use_container_width=True):
+        for idx in range(len(options)):
+            st.session_state.pop(f"clue_{scenario}_{idx}", None)
+        st.session_state.selected_clues = []
+        st.session_state.analysis_done = False
+        st.rerun()
+with note_col:
+    st.caption("New here? Try the sample button to see how the agent works.")
+
 selected = []
 with st.container(border=True):
     st.markdown("**Diagnostic clues**")
     clue_cols = st.columns(2, gap="large")
     for i, clue in enumerate(options):
         with clue_cols[i % 2]:
-            checked = st.checkbox(clue, value=clue in st.session_state.selected_clues, key=f"clue_{scenario}_{i}")
+            widget_key = f"clue_{scenario}_{i}"
+            if widget_key not in st.session_state:
+                st.session_state[widget_key] = clue in st.session_state.selected_clues
+            checked = st.checkbox(clue, key=widget_key)
             if checked:
                 selected.append(clue)
     st.session_state.selected_clues = selected
-    st.caption(f"{len(selected)} clue{'s' if len(selected) != 1 else ''} selected")
+    st.caption(f"🧩 {len(selected)} clue{'s' if len(selected) != 1 else ''} selected")
 
 button_col, hint_col = st.columns([1, 2])
 with button_col:
     analyze = st.button("🔎 Analyze my clues", type="primary", use_container_width=True)
 with hint_col:
-    st.caption("Your results update when you analyze. You can change clues and analyze again.")
+    st.caption("Change any clue and analyze again to compare the results.")
 
 if analyze:
     st.session_state.analysis_done = True
@@ -295,5 +332,3 @@ with st.expander("🎓 Project details & viva preparation"):
 **Future scope:** expert-verified knowledge, calibrated probabilities, user feedback, or a Bayesian network / machine-learning model.
 """)
 
-st.divider()
-st.caption("RootCause AI · College project prototype · Offline demo")

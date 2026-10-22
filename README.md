@@ -6,7 +6,8 @@ An interactive, beginner-friendly offline troubleshooting demo built with Python
 - Five sample problems: Python syntax error, website not loading, laptop overheating, student portal login failure, and slow computer.
 - Clear guided steps and interactive diagnostic clues.
 - Ranked possible causes, relative scores, explanations, and recommended next steps.
-- Responsive, modern dark UI.
+- Responsive, modern dark UI with clearer step-by-step guidance.
+- Try-a-sample button, clear/reset controls, hover feedback, and interactive diagnostic clues.
 - No API key or account required.
 
 ## Run on Windows
